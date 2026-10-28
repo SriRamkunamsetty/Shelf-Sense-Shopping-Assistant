@@ -1,0 +1,53 @@
+[project]
+name = "shelfsense"
+version = "1.0.0"
+description = "ShelfSense — closed-loop, demand-aware commerce agents built on Google ADK and Gemini"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "google-adk>=1.14",
+  "google-genai>=1.30",
+  "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+gcp = [
+  "google-cloud-firestore>=2.19",
+  "google-cloud-bigquery>=3.25",
+]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.23",
+  "ruff>=0.6",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["shelfsense*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "C4", "SIM"]
+ignore = [
+  "S101",  # assert is fine in tests
+  "S311",  # random is used for synthetic data only, never for security
+  "B008",  # FastAPI Depends() in defaults is the documented pattern
+  "E501",  # long template strings (multilingual copy) are intentional
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning", "ignore::UserWarning"]

@@ -1,0 +1,37 @@
+# Build, push and deploy to Cloud Run:  gcloud builds submit --config cloudbuild.yaml --substitutions=_REGION=asia-south1
+substitutions:
+  _REGION: asia-south1
+  _REPO: shelfsense
+  _SERVICE: shelfsense
+  _STORE: firestore
+  _DEMO: "false"
+  _SEED: "false"      # true only for the judging/demo deployment: loads the synthetic store
+  _SALES: memory      # memory (synthetic) | bigquery (real sales_daily table)
+  _BQ_DATASET: shelfsense
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA", "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest", "."]
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "--all-tags", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}"]
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+      - --region=${_REGION}
+      - --service-account=shelfsense-run@$PROJECT_ID.iam.gserviceaccount.com
+      - --allow-unauthenticated
+      - --cpu=1
+      - --memory=1Gi
+      - --concurrency=40
+      - --timeout=60
+      - --session-affinity
+      - --set-env-vars=GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=us-central1,STORE_BACKEND=${_STORE},DEMO_MODE=${_DEMO},SEED_ON_START=${_SEED},SALES_BACKEND=${_SALES},BIGQUERY_DATASET=${_BQ_DATASET},APP_ENV=production
+      - --set-secrets=OPS_API_KEY=shelfsense-ops-key:latest
+options:
+  logging: CLOUD_LOGGING_ONLY
