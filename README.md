@@ -52,6 +52,18 @@ flowchart LR
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design decisions, [`docs/RESPONSIBLE_AI.md`](docs/RESPONSIBLE_AI.md) for privacy and safety, [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for a 3-minute walkthrough and [`docs/PITCH.md`](docs/PITCH.md) for the plain-language pitch.
 
+## Tech Stack
+
+| Layer | Technologies & Tools | Description |
+|---|---|---|
+| **AI & Multi-Agent Framework** | **Google ADK** (`google-adk`), **Google GenAI** (`google-genai`), **Gemini 2.5 Flash** | Multi-agent collaboration with `shopper_agent`, `ops_copilot`, 4 specialist sub-agents (`demand_signal_agent`, `forecast_agent`, `inventory_agent`, `outreach_agent`), and `SequentialAgent` planning pipeline |
+| **Backend & Web API** | **Python 3.11+ / 3.13**, **FastAPI**, **Uvicorn**, **Pydantic v2**, `pydantic-settings`, **HTTPX** | High-performance asynchronous REST API, strict schemas, rate limiting, HMAC-secured owner endpoints, structured Cloud Logging |
+| **Deterministic Core Engines** | **Pure Python** (Zero native C dependencies) | IDF-weighted need-coverage search, Jaccard lexical clustering, stock-out censored demand imputation, damped additive Holt-Winters forecaster (weekly seasonality + 80% prediction intervals), 95% service-level restock calculation |
+| **Databases & Analytics** | **Google Cloud Firestore**, **Google Cloud BigQuery**, **BigQuery ML** | Dual-store architecture: Firestore Native document store (with thread-safe in-memory fallback), BigQuery event streaming, historical sales analysis, Looker Studio views, and BQML `ARIMA_PLUS` |
+| **Frontend UI** | **React 18**, **TypeScript 5.6**, **Vite 5**, **Web Speech API** | Responsive split-screen UI (shopper chat + owner console), browser speech recognition (STT) & speech synthesis (TTS) in English, Hindi & Telugu, hand-crafted SVG forecast charts, zero heavy UI libraries (55 kB gzipped JS) |
+| **Cloud & Infrastructure** | **Google Cloud Run**, **Google Cloud Build**, **Artifact Registry**, **Google Secret Manager**, **Docker** | Containerized serverless deployment (single multi-stage container serving API & UI), automated cloud builds, least-privilege IAM, secret isolation |
+| **Testing & CI/CD** | **Pytest**, `pytest-asyncio`, **Ruff**, **GitHub Actions** | 77 automated backend tests covering algorithmic edge cases, end-to-end closed loop, mock ADK Runner testing, and GitHub Actions CI workflow |
+
 ## What's inside
 
 - **Need-coverage search.** Instead of "top-k similar items" (which always returns something), each product is scored by how much of the shopper's need it *covers*. That separates `in_stock`, `out_of_stock`, `over_budget`, `partial` (substitute only) and `not_carried`. Vernacular words (చక్కెర, चीनी, *chini*, *biyyam*) map to canonical terms.
